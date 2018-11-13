@@ -1,0 +1,102 @@
+<script src="simpletest.js"></script>
+<script>
+
+(function(root){
+  var libraryStorage = {}; 
+  function librarySystem(libraryName, dependencyNames, callback){
+    if (arguments.length>1){ // storing a library  
+      libraryStorage[libraryName] = {
+        callback: callback, 
+        dependencyNames: dependencyNames, 
+        cache: undefined
+      }; 
+    }
+    else { // loading a library 
+      var library = libraryStorage[libraryName]; 
+      if (!library.cache){ // creating a cache on 1st load 
+        var dependencyReturnValues = library.dependencyNames.map(function(dependencyName){
+          return librarySystem(dependencyName); 
+        }); 
+        library.cache = library.callback.apply(null, dependencyReturnValues);  
+      }
+      return library.cache; 
+    }
+  }; 
+  root.librarySystem = librarySystem; 
+})(this);   
+
+tests({
+
+  // These tests are for Beast 3...
+
+  "It should accept an array of strings matching dependency names as its second argument." : function(){
+    var testArray = ['test']; 
+    librarySystem('name', testArray, function(){
+      eq(testArray[0],'test'); 
+    });  
+  }, 
+
+  "If the second argument array is empty, it should simply store callback's return in libraryStorage." : function(){
+    librarySystem('name',[],function(){
+      return 'this is the return value for name'; 
+    }); 
+    eq(librarySystem('name'),'this is the return value for name');
+  },
+
+  "It should use the dependency names in the second argument to pass stored dependencies into callback." : function(){
+    librarySystem('name', [], function() {
+      return 'Gordon';
+    });
+    librarySystem('company', [], function() {
+      return 'Watch and Code';
+    });
+    librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+      return name + ' works at ' + company;
+    });
+    eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
+  },
+
+  // Beast 4 tests...
+
+  "It should be able to take a library with dependencies before those dependencies, and properly store it." : function(){
+    librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+      return name + ' works at ' + company;
+    });
+    librarySystem('name', [], function() {
+      return 'Gordon';
+    });
+    librarySystem('company', [], function() {
+      return 'Watch and Code';
+    });
+    eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
+  },
+
+  "It should handle nested dependencies.": function(){
+    librarySystem('sayHiTo',['name'],function(name){
+      return 'Hi ' + name; 
+    })
+    librarySystem('name', ['firstName', 'lastName'], function(firstName, lastName){
+      return firstName + " " + lastName; 
+    })
+    librarySystem('firstName',[],function(){
+      return 'Bobby'; 
+    })
+    librarySystem('lastName',[],function(){
+      return 'Scar'; 
+    })
+    eq(librarySystem('sayHiTo'),'Hi Bobby Scar'); 
+  },
+
+  "It should only run the callback that returns a library's contents one time." : function(){
+    var callbackRunCounter = 0; 
+    librarySystem('name', [], function() {
+      callbackRunCounter++; 
+      return 'Gordon';
+    });
+    librarySystem('name'); 
+    eq(callbackRunCounter, 1); 
+  }
+
+}); 
+
+</script>
