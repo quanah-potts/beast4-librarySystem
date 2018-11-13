@@ -3,15 +3,18 @@
 
 (function(root){
   var libraryStorage = {}; 
+  
   function librarySystem(libraryName, dependencyNames, callback){
-    if (arguments.length>1){ // storing a library  
+    // storing a library 
+    if (arguments.length>1){  
       libraryStorage[libraryName] = {
         callback: callback, 
         dependencyNames: dependencyNames, 
         cache: undefined
       }; 
     }
-    else { // loading a library 
+    // loading a library 
+    else { 
       var library = libraryStorage[libraryName]; 
       if (!library.cache){ // creating a cache on 1st load 
         var dependencyReturnValues = library.dependencyNames.map(function(dependencyName){
@@ -22,12 +25,13 @@
       return library.cache; 
     }
   }; 
-  root.librarySystem = librarySystem; 
+  
+  root.librarySystem = librarySystem;
 })(this);   
 
 tests({
 
-  // These tests are for Beast 3...
+  // These tests are from Beast 3...
 
   "It should accept an array of strings matching dependency names as its second argument." : function(){
     var testArray = ['test']; 
